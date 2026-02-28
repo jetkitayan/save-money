@@ -13,11 +13,20 @@
     .card { background: #fff; border: 1px solid #e6e6e6; border-radius: 12px; padding: 12px; }
     .grid { display: grid; gap: 10px; }
 
-    /* 入力欄：スマホは縦、PCは横 */
-    .grid.cols { grid-template-columns: 1fr; }
+    /* スマホ：全部縦並び（←重要） */
+    .grid.cols {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    
+    /* PCだけ横並び */
     @media (min-width: 720px) {
-      .grid.cols { grid-template-columns: 240px 240px 180px 1fr 140px auto; align-items: end; }
-      .grid.sums { grid-template-columns: repeat(4, 1fr); }
+      .grid.cols {
+        display: grid;
+        grid-template-columns: 240px 240px 180px 1fr 140px auto;
+        align-items: end;
+      }
     }
 
     label { font-size: 12px; color: #555; display: block; margin-bottom: 6px; }
