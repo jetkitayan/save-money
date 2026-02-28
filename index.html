@@ -302,35 +302,6 @@
     renderTable();
   }
 
-  function addItem() {
-    const amt = parseAmount(amountEl.value);
-    if (amt === null) {
-      alert("金額を入力してください（例：+300, -120, 300）");
-      amountEl.focus();
-      return;
-    }
-
-    const item = {
-      id: crypto.randomUUID(),
-      ts: Date.now(),
-      amount: amt,
-      type: typeEl.value.trim(),
-      note: noteEl.value.trim(),
-      judge: (judgeEl.value === "NG" ? "NG" : "OK")
-    };
-
-    items.unshift(item);
-    items = items.slice(0, MAX_SAVE);
-
-    save();
-    refresh();
-
-    amountEl.value = "";
-    noteEl.value = "";
-    judgeEl.value = "OK";
-    amountEl.focus();
-  }
-
   function parseNumberOnly(s) {
     const t = String(s ?? "").trim();
     if (!t) return null;
