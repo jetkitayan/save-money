@@ -281,8 +281,51 @@
       tdType.innerHTML = x.type ? `<span class="pill">${escapeHtml(x.type)}</span>` : "";
 
       const tdNote = document.createElement("td");
-      tdNote.textContent = x.note || "";
-
+      
+      // 備考を編集できる input にする
+      const noteInput = document.createElement("input");
+      noteInput.type = "text";
+      noteInput.value = x.note || "";
+      noteInput.placeholder = "備考（編集可）";
+      
+      // 入力しやすいように少しだけ見た目調整（任意）
+      noteInput.style.width = "100%";
+      noteInput.style.padding = "8px 10px";
+      noteInput.style.borderRadius = "10px";
+      noteInput.style.border = "1px solid #ddd";
+      
+      let original = noteInput.value;
+      
+      // 変更を保存（フォーカスが外れた時 or Enter）
+      const commit = () => {
+        const it = items.find(it => it.id === x.id);
+        if (!it) return;
+        it.note = noteInput.value.trim();
+        save();
+        renderSums(); // 合計は変わらないけど保険で
+      };
+      
+      // Escで元に戻す
+      noteInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          noteInput.blur(); // blur時に保存される
+        } else if (e.key === "Escape") {
+          noteInput.value = original;
+          noteInput.blur();
+        }
+      });
+      
+      noteInput.addEventListener("focus", () => {
+        original = noteInput.value;
+      });
+      
+      // フォーカスアウトで保存
+      noteInput.addEventListener("blur", commit);
+      
+      // （任意）変更した瞬間にも保存したいなら change も
+      noteInput.addEventListener("change", commit);
+      
+      tdNote.appendChild(noteInput);
       const tdOps = document.createElement("td");
       tdOps.className = "right";
       const pill = document.createElement("span");
