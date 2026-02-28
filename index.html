@@ -105,6 +105,19 @@
         font-size: 11px;
       }
     }
+
+    /* 合計4つを横に並べつつ、潰れたら横スクロールできるようにする */
+    @media (max-width: 600px) {
+      .grid.sums {
+        grid-template-columns: repeat(4, minmax(90px, 1fr));
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 4px;
+      }
+      .sumBox {
+        min-width: 90px;
+      }
+    }
   </style>
 </head>
 <body>
