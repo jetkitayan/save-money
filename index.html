@@ -83,6 +83,28 @@
       .th-type { width: 72px !important; }
       .th-ops { width: 110px !important; }
     }
+
+    /* 合計欄は常に横並び */
+    .grid.sums {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+    
+    /* iPhoneでは少し詰める */
+    @media (max-width: 600px) {
+      .grid.sums {
+        gap: 6px;
+      }
+    
+      .sumBox .v {
+        font-size: 15px; /* 数字少し小さく */
+      }
+    
+      .sumBox .k {
+        font-size: 11px;
+      }
+    }
   </style>
 </head>
 <body>
