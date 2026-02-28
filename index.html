@@ -12,10 +12,14 @@
     main { max-width: 980px; margin: 0 auto; padding: 14px; }
     .card { background: #fff; border: 1px solid #e6e6e6; border-radius: 12px; padding: 12px; }
     .grid { display: grid; gap: 10px; }
+
+    /* 入力欄：スマホは縦、PCは横 */
+    .grid.cols { grid-template-columns: 1fr; }
     @media (min-width: 720px) {
-      .grid.cols { grid-template-columns: 170px 180px 1fr 140px auto; align-items: end; }
+      .grid.cols { grid-template-columns: 240px 240px 180px 1fr 140px auto; align-items: end; }
       .grid.sums { grid-template-columns: repeat(4, 1fr); }
     }
+
     label { font-size: 12px; color: #555; display: block; margin-bottom: 6px; }
     input, textarea, select {
       width: 100%;
@@ -25,7 +29,6 @@
       font-size: 15px;
       background: #fff;
     }
-    textarea { resize: vertical; min-height: 42px; }
     button {
       padding: 10px 14px;
       border-radius: 10px;
@@ -34,6 +37,26 @@
       cursor: pointer;
       font-size: 14px;
     }
+    button:active { transform: translateY(1px); }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .muted { color: #666; font-size: 12px; }
+
+    .sumGroupTitle { margin: 0 0 8px; font-size: 14px; color: #333; }
+    .sumBox { padding: 10px; border: 1px solid #e6e6e6; border-radius: 12px; background: #fbfbfb; }
+    .sumBox .k { font-size: 12px; color: #666; }
+    .sumBox .v { font-size: 18px; font-weight: 700; margin-top: 6px; }
+
+    /* iPhone備考幅対策：固定幅を減らして備考を広くする */
+    table { width: 100%; border-collapse: collapse; table-layout: auto; }
+    th, td { padding: 10px 8px; border-bottom: 1px solid #eee; text-align: left; vertical-align: top; }
+    th { font-size: 12px; color: #666; font-weight: 600; white-space: nowrap; }
+    td { font-size: 14px; }
+    .amt, .kcal { font-weight: 700; }
+    .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; border: 1px solid #ddd; font-size: 12px; background: #fff; }
+    .pill.ok { border-color: #cfe8d5; background: #f3fbf5; }
+    .pill.ng { border-color: #f0caca; background: #fff6f6; }
+    .right { text-align: right; }
+
     .note-edit {
       width: 100%;
       padding: 8px 10px;
@@ -41,41 +64,35 @@
       border: 1px solid #ddd;
       font-size: 14px;
     }
-    button:active { transform: translateY(1px); }
-    .row { display: flex; gap: 8px; flex-wrap: wrap; }
-    .muted { color: #666; font-size: 12px; }
-    .sumBox { padding: 10px; border: 1px solid #e6e6e6; border-radius: 12px; background: #fbfbfb; }
-    .sumBox .k { font-size: 12px; color: #666; }
-    .sumBox .v { font-size: 18px; font-weight: 700; margin-top: 6px; }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      table-layout: auto; /* ←追加 */
+
+    @media (max-width: 600px) {
+      /* スマホで横幅を食う列を少し縮める */
+      .th-date { width: 105px !important; }
+      .th-judge { width: 72px !important; }
+      .th-amt { width: 78px !important; }
+      .th-kcal { width: 72px !important; }
+      .th-type { width: 72px !important; }
+      .th-ops { width: 110px !important; }
     }
-    th, td { padding: 10px 8px; border-bottom: 1px solid #eee; text-align: left; vertical-align: top; }
-    th { font-size: 12px; color: #666; font-weight: 600; }
-    td { font-size: 14px; }
-    .amt { font-weight: 700; }
-    .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; border: 1px solid #ddd; font-size: 12px; background: #fff; }
-    .pill.ok { border-color: #cfe8d5; background: #f3fbf5; }
-    .pill.ng { border-color: #f0caca; background: #fff6f6; }
-    .right { text-align: right; }
   </style>
 </head>
 <body>
   <header>
     <h1>節約ログ</h1>
-    <div class="muted">出費は <b>+</b>、節約できたら <b>-</b>（例：+300、-120）／ OK・NGで「いい出費だったか」も記録</div>
+    <div class="muted">
+      金額：出費は <b>+</b>、節約は <b>-</b> ／ カロリー：摂取は <b>+</b>、削減は <b>-</b> ／ OK・NGで評価も記録
+    </div>
   </header>
 
   <main class="grid" style="gap:14px;">
     <!-- 入力 -->
     <section class="card">
       <div class="grid cols">
+        <!-- 金額 -->
         <div>
           <label>金額（出費/節約）</label>
-          <div style="display:flex; gap:8px; align-items:center;">
-            <select id="sign" style="width:110px;">
+          <div class="row">
+            <select id="signMoney" style="width:110px; flex:0 0 auto;">
               <option value="plus" selected>出費（+）</option>
               <option value="minus">節約（-）</option>
             </select>
@@ -84,21 +101,34 @@
           <div class="muted">※ 符号は左で選択（スマホで-が打てない問題を回避）</div>
         </div>
 
+        <!-- カロリー -->
+        <div>
+          <label>カロリー（摂取/削減）</label>
+          <div class="row">
+            <select id="signKcal" style="width:110px; flex:0 0 auto;">
+              <option value="plus" selected>摂取（+）</option>
+              <option value="minus">削減（-）</option>
+            </select>
+            <input id="kcal" inputmode="numeric" placeholder="250 / 500" />
+          </div>
+          <div class="muted">※ 例：間食 250kcal → +250 ／ 運動で 200kcal 相当削減 → -200</div>
+        </div>
+
         <div>
           <label for="type">種別</label>
-          <input id="type" placeholder="例：昼食 / カフェ / 交通 / 買い物" />
+          <input id="type" placeholder="例：昼食 / カフェ / 交通 / 買い物 / 運動" />
         </div>
 
         <div>
           <label for="note">備考</label>
-          <input id="note" placeholder="例：コンビニやめた / 弁当持参" />
+          <input id="note" placeholder="例：コンビニやめた / 弁当持参 / ランニング30分" />
         </div>
 
         <div>
           <label for="judge">OK / NG</label>
           <select id="judge">
-            <option value="OK" selected>OK（良い出費）</option>
-            <option value="NG">NG（微妙な出費）</option>
+            <option value="OK" selected>OK（良い）</option>
+            <option value="NG">NG（微妙）</option>
           </select>
         </div>
 
@@ -109,47 +139,47 @@
       </div>
     </section>
 
-    <!-- 合計 -->
+    <!-- 合計：金額 -->
     <section class="card">
+      <h3 class="sumGroupTitle">金額 合計</h3>
       <div class="grid sums">
-        <div class="sumBox">
-          <div class="k">直近100件 合計</div>
-          <div class="v" id="sum100">0</div>
-        </div>
-        <div class="sumBox">
-          <div class="k">直近50件 合計</div>
-          <div class="v" id="sum50">0</div>
-        </div>
-        <div class="sumBox">
-          <div class="k">直近20件 合計</div>
-          <div class="v" id="sum20">0</div>
-        </div>
-        <div class="sumBox">
-          <div class="k">直近10件 合計</div>
-          <div class="v" id="sum10">0</div>
-        </div>
+        <div class="sumBox"><div class="k">直近100件</div><div class="v" id="sumMoney100">0</div></div>
+        <div class="sumBox"><div class="k">直近50件</div><div class="v" id="sumMoney50">0</div></div>
+        <div class="sumBox"><div class="k">直近20件</div><div class="v" id="sumMoney20">0</div></div>
+        <div class="sumBox"><div class="k">直近10件</div><div class="v" id="sumMoney10">0</div></div>
       </div>
-      <div class="muted" style="margin-top:10px;">
-        ※ 合計は「入力金額の合算」。OK/NGは評価ラベル（合計計算には影響しない）
+      <div class="muted" style="margin-top:10px;">※ 合計は「金額の合算」。出費（+）は増える／節約（-）は減る</div>
+    </section>
+
+    <!-- 合計：カロリー -->
+    <section class="card">
+      <h3 class="sumGroupTitle">カロリー 合計（kcal）</h3>
+      <div class="grid sums">
+        <div class="sumBox"><div class="k">直近100件</div><div class="v" id="sumKcal100">0</div></div>
+        <div class="sumBox"><div class="k">直近50件</div><div class="v" id="sumKcal50">0</div></div>
+        <div class="sumBox"><div class="k">直近20件</div><div class="v" id="sumKcal20">0</div></div>
+        <div class="sumBox"><div class="k">直近10件</div><div class="v" id="sumKcal10">0</div></div>
       </div>
+      <div class="muted" style="margin-top:10px;">※ 合計は「カロリーの合算」。摂取（+）は増える／削減（-）は減る</div>
     </section>
 
     <!-- 一覧 -->
     <section class="card">
-      <div class="row" style="justify-content:space-between; align-items:center;">
-        <div class="muted">最新が上。最大 1000 件まで保存。</div>
+      <div class="row" style="justify-content:space-between;">
+        <div class="muted">最新が上。最大 1000 件まで保存。備考は一覧で編集可。</div>
         <button id="exportBtn">JSONエクスポート</button>
       </div>
       <div style="overflow:auto; margin-top:10px;">
         <table>
           <thead>
             <tr>
-              <th style="width:110px;">日時</th>
-              <th style="width:90px;">OK/NG</th>
-              <th style="width:90px;" class="right">金額</th>
-              <th style="width:90px;">種別</th>
+              <th class="th-date" style="width:130px;">日時</th>
+              <th class="th-judge" style="width:90px;">OK/NG</th>
+              <th class="th-amt right" style="width:90px;">金額</th>
+              <th class="th-kcal right" style="width:90px;">kcal</th>
+              <th class="th-type" style="width:110px;">種別</th>
               <th>備考</th>
-              <th style="width:150px;"></th>
+              <th class="th-ops" style="width:120px;"></th>
             </tr>
           </thead>
           <tbody id="tbody"></tbody>
@@ -160,13 +190,15 @@
 
 <script>
 (() => {
-  const KEY = "saving_log_v2"; // v1と衝突しないように
+  const KEY = "saving_log_v3"; // カロリー追加でバージョン変更
   const MAX_SAVE = 1000;
 
   const $ = (id) => document.getElementById(id);
 
-  const signEl = $("sign");
+  const signMoneyEl = $("signMoney");
   const amountEl = $("amount");
+  const signKcalEl = $("signKcal");
+  const kcalEl = $("kcal");
   const typeEl = $("type");
   const noteEl = $("note");
   const judgeEl = $("judge");
@@ -174,10 +206,16 @@
   const clearBtn = $("clearBtn");
   const exportBtn = $("exportBtn");
 
-  const sum100El = $("sum100");
-  const sum50El = $("sum50");
-  const sum20El = $("sum20");
-  const sum10El = $("sum10");
+  const sumMoney100El = $("sumMoney100");
+  const sumMoney50El  = $("sumMoney50");
+  const sumMoney20El  = $("sumMoney20");
+  const sumMoney10El  = $("sumMoney10");
+
+  const sumKcal100El = $("sumKcal100");
+  const sumKcal50El  = $("sumKcal50");
+  const sumKcal20El  = $("sumKcal20");
+  const sumKcal10El  = $("sumKcal10");
+
   const tbody = $("tbody");
 
   function newId() {
@@ -185,7 +223,7 @@
     return String(Date.now()) + "_" + Math.random().toString(16).slice(2);
   }
 
-  /** @type {{id:string, ts:number, amount:number, type:string, note:string, judge:"OK"|"NG"}[]} */
+  /** @type {{id:string, ts:number, amount:number, kcal:number, type:string, note:string, judge:"OK"|"NG"}[]} */
   let items = load();
 
   function load() {
@@ -200,6 +238,7 @@
           id: String(x.id || newId()),
           ts: Number(x.ts || Date.now()),
           amount: Number(x.amount || 0),
+          kcal: Number(x.kcal || 0),
           type: String(x.type || ""),
           note: String(x.note || ""),
           judge: (x.judge === "NG" ? "NG" : "OK")
@@ -222,16 +261,31 @@
     return sign + s;
   }
 
-  function sumLast(k) {
-    const slice = items.slice(0, k);
-    return slice.reduce((acc, x) => acc + (Number(x.amount) || 0), 0);
+  function kcalFmt(n) {
+    const sign = n > 0 ? "+" : (n < 0 ? "-" : "");
+    const abs = Math.abs(n);
+    const isInt = Number.isInteger(abs);
+    const s = isInt ? abs.toLocaleString("ja-JP") : abs.toLocaleString("ja-JP", { maximumFractionDigits: 1 });
+    return sign + s;
+  }
+
+  function sumLastMoney(k) {
+    return items.slice(0, k).reduce((acc, x) => acc + (Number(x.amount) || 0), 0);
+  }
+  function sumLastKcal(k) {
+    return items.slice(0, k).reduce((acc, x) => acc + (Number(x.kcal) || 0), 0);
   }
 
   function renderSums() {
-    sum100El.textContent = yen(sumLast(100));
-    sum50El.textContent  = yen(sumLast(50));
-    sum20El.textContent  = yen(sumLast(20));
-    sum10El.textContent  = yen(sumLast(10));
+    sumMoney100El.textContent = yen(sumLastMoney(100));
+    sumMoney50El.textContent  = yen(sumLastMoney(50));
+    sumMoney20El.textContent  = yen(sumLastMoney(20));
+    sumMoney10El.textContent  = yen(sumLastMoney(10));
+
+    sumKcal100El.textContent = kcalFmt(sumLastKcal(100));
+    sumKcal50El.textContent  = kcalFmt(sumLastKcal(50));
+    sumKcal20El.textContent  = kcalFmt(sumLastKcal(20));
+    sumKcal10El.textContent  = kcalFmt(sumLastKcal(10));
   }
 
   function fmtDate(ts) {
@@ -241,9 +295,8 @@
     const day = String(d.getDate()).padStart(2, "0");
     const hh = String(d.getHours()).padStart(2, "0");
     const mm = String(d.getMinutes()).padStart(2, "0");
-    if (window.innerWidth < 600) {
-      return `${m}/${day} ${hh}:${mm}`;
-    }
+    // スマホは短縮
+    if (window.innerWidth < 600) return `${m}/${day} ${hh}:${mm}`;
     return `${y}/${m}/${day} ${hh}:${mm}`;
   }
 
@@ -286,59 +339,54 @@
       tdAmt.className = "right amt";
       tdAmt.textContent = yen(x.amount);
 
+      const tdKcal = document.createElement("td");
+      tdKcal.className = "right kcal";
+      tdKcal.textContent = kcalFmt(x.kcal);
+
       const tdType = document.createElement("td");
       tdType.innerHTML = x.type ? `<span class="pill">${escapeHtml(x.type)}</span>` : "";
 
       const tdNote = document.createElement("td");
-      
+
       // 備考を編集できる input にする
       const noteInput = document.createElement("input");
       noteInput.type = "text";
       noteInput.value = x.note || "";
       noteInput.placeholder = "備考（編集可）";
-            
+      noteInput.className = "note-edit";
+
       let original = noteInput.value;
-      
-      // 変更を保存（フォーカスが外れた時 or Enter）
+
       const commit = () => {
         const it = items.find(it => it.id === x.id);
         if (!it) return;
         it.note = noteInput.value.trim();
         save();
       };
-      
-      // Escで元に戻す
+
       noteInput.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") {
-          noteInput.blur(); // blur時に保存される
-        } else if (e.key === "Escape") {
-          noteInput.value = original;
-          noteInput.blur();
-        }
+        if (e.key === "Enter") noteInput.blur();
+        if (e.key === "Escape") { noteInput.value = original; noteInput.blur(); }
       });
-      
-      noteInput.addEventListener("focus", () => {
-        original = noteInput.value;
-      });
-      
-      // フォーカスアウトで保存
+      noteInput.addEventListener("focus", () => { original = noteInput.value; });
       noteInput.addEventListener("blur", commit);
-      
-      // （任意）変更した瞬間にも保存したいなら change も
       noteInput.addEventListener("change", commit);
-      noteInput.className = "note-edit";
+
       tdNote.appendChild(noteInput);
+
       const tdOps = document.createElement("td");
       tdOps.className = "right";
       const pill = document.createElement("span");
       pill.className = "pill " + (x.judge === "OK" ? "ok" : "ng");
       pill.textContent = (x.judge === "OK" ? "良い" : "微妙");
+
       const delBtn = document.createElement("button");
       delBtn.textContent = "削除";
       delBtn.addEventListener("click", () => removeItem(x.id));
+
       tdOps.append(pill, document.createTextNode(" "), delBtn);
 
-      tr.append(tdDate, tdJudge, tdAmt, tdType, tdNote, tdOps);
+      tr.append(tdDate, tdJudge, tdAmt, tdKcal, tdType, tdNote, tdOps);
       tbody.appendChild(tr);
     }
   }
@@ -350,48 +398,50 @@
 
   function parseNumberOnly(s) {
     const t = String(s ?? "").trim();
-    if (!t) return null;
+    if (!t) return 0; // 未入力は 0 扱い
     const normalized = t.replace(/,/g, "");
-    if (!/^(\d+(\.\d+)?)$/.test(normalized)) return null; // マイナス禁止
+    if (!/^(\d+(\.\d+)?)$/.test(normalized)) return null;
     const n = Number(normalized);
     if (!Number.isFinite(n)) return null;
     return n;
   }
-  
+
   function addItem() {
-    const n = parseNumberOnly(amountEl.value);
-    if (n === null) {
-      alert("金額を数字で入力してください（例：300, 1200）");
-      amountEl.focus();
-      return;
-    }
-  
-    const sign = (signEl.value === "minus") ? -1 : 1;
-    const amt = n * sign;
-  
+    const moneyN = parseNumberOnly(amountEl.value);
+    if (moneyN === null) { alert("金額は数字で入力してください（例：300）"); amountEl.focus(); return; }
+    const kcalN = parseNumberOnly(kcalEl.value);
+    if (kcalN === null) { alert("カロリーは数字で入力してください（例：250）"); kcalEl.focus(); return; }
+
+    const moneySign = (signMoneyEl.value === "minus") ? -1 : 1;
+    const kcalSign  = (signKcalEl.value === "minus") ? -1 : 1;
+
     const item = {
       id: newId(),
       ts: Date.now(),
-      amount: amt,
+      amount: moneyN * moneySign,
+      kcal: kcalN * kcalSign,
       type: typeEl.value.trim(),
       note: noteEl.value.trim(),
       judge: (judgeEl.value === "NG" ? "NG" : "OK")
     };
-  
+
     items.unshift(item);
     items = items.slice(0, MAX_SAVE);
     save();
     refresh();
-  
+
     amountEl.value = "";
+    kcalEl.value = "";
     noteEl.value = "";
     judgeEl.value = "OK";
-    signEl.value = "plus";
+    signMoneyEl.value = "plus";
+    signKcalEl.value = "plus";
     amountEl.focus();
   }
-  
+
   addBtn.addEventListener("click", addItem);
   amountEl.addEventListener("keydown", (e) => { if (e.key === "Enter") addItem(); });
+  kcalEl.addEventListener("keydown", (e) => { if (e.key === "Enter") addItem(); });
   noteEl.addEventListener("keydown", (e) => { if (e.key === "Enter") addItem(); });
 
   clearBtn.addEventListener("click", () => {
