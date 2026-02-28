@@ -62,9 +62,15 @@
     <section class="card">
       <div class="grid cols">
         <div>
-          <label for="amount">金額（+ / -）</label>
-          <input id="amount" inputmode="decimal" placeholder="+300 / -120 / 300 / -300" />
-          <div class="muted">※ 先頭の + は省略してOK（300 でも +300 扱い）</div>
+          <label>金額（出費/節約）</label>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <select id="sign" style="width:110px;">
+              <option value="plus" selected>出費（+）</option>
+              <option value="minus">節約（-）</option>
+            </select>
+            <input id="amount" inputmode="numeric" placeholder="300 / 1200" />
+          </div>
+          <div class="muted">※ 符号は左で選択（スマホで-が打てない問題を回避）</div>
         </div>
 
         <div>
@@ -325,6 +331,48 @@
     amountEl.focus();
   }
 
+  function parseNumberOnly(s) {
+    const t = String(s ?? "").trim();
+    if (!t) return null;
+    const normalized = t.replace(/,/g, "");
+    if (!/^(\d+(\.\d+)?)$/.test(normalized)) return null; // マイナス禁止
+    const n = Number(normalized);
+    if (!Number.isFinite(n)) return null;
+    return n;
+  }
+  
+  function addItem() {
+    const n = parseNumberOnly(amountEl.value);
+    if (n === null) {
+      alert("金額を数字で入力してください（例：300, 1200）");
+      amountEl.focus();
+      return;
+    }
+  
+    const sign = (document.getElementById("sign").value === "minus") ? -1 : 1;
+    const amt = n * sign;
+  
+    const item = {
+      id: crypto.randomUUID(),
+      ts: Date.now(),
+      amount: amt,
+      type: typeEl.value.trim(),
+      note: noteEl.value.trim(),
+      judge: (judgeEl.value === "NG" ? "NG" : "OK")
+    };
+  
+    items.unshift(item);
+    items = items.slice(0, MAX_SAVE);
+    save();
+    refresh();
+  
+    amountEl.value = "";
+    noteEl.value = "";
+    judgeEl.value = "OK";
+    document.getElementById("sign").value = "plus";
+    amountEl.focus();
+  }
+  
   addBtn.addEventListener("click", addItem);
   amountEl.addEventListener("keydown", (e) => { if (e.key === "Enter") addItem(); });
   noteEl.addEventListener("keydown", (e) => { if (e.key === "Enter") addItem(); });
