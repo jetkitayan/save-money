@@ -176,6 +176,11 @@
   const sum10El = $("sum10");
   const tbody = $("tbody");
 
+  function newId() {
+    if (crypto && crypto.randomUUID) return crypto.randomUUID();
+    return String(Date.now()) + "_" + Math.random().toString(16).slice(2);
+  }
+
   /** @type {{id:string, ts:number, amount:number, type:string, note:string, judge:"OK"|"NG"}[]} */
   let items = load();
 
