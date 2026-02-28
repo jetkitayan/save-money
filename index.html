@@ -231,6 +231,26 @@
 
   const tbody = $("tbody");
 
+  function renderTypeList() {
+    const dl = document.getElementById("typeList");
+    if (!dl) return;
+  
+    // 重複なしで種別を抽出
+    const types = [...new Set(
+      items
+        .map(x => (x.type || "").trim())
+        .filter(Boolean)
+    )];
+  
+    dl.innerHTML = "";
+  
+    for (const t of types) {
+      const opt = document.createElement("option");
+      opt.value = t;
+      dl.appendChild(opt);
+    }
+  }
+  
   function newId() {
     if (crypto && crypto.randomUUID) return crypto.randomUUID();
     return String(Date.now()) + "_" + Math.random().toString(16).slice(2);
