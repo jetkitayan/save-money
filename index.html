@@ -13,7 +13,7 @@
     .card { background: #fff; border: 1px solid #e6e6e6; border-radius: 12px; padding: 12px; }
     .grid { display: grid; gap: 10px; }
     @media (min-width: 720px) {
-      .grid.cols { grid-template-columns: 170px 180px 1fr auto; align-items: end; }
+      .grid.cols { grid-template-columns: 170px 180px 1fr 140px auto; align-items: end; }
       .grid.sums { grid-template-columns: repeat(4, 1fr); }
     }
     label { font-size: 12px; color: #555; display: block; margin-bottom: 6px; }
@@ -44,16 +44,17 @@
     th, td { padding: 10px 8px; border-bottom: 1px solid #eee; text-align: left; vertical-align: top; }
     th { font-size: 12px; color: #666; font-weight: 600; }
     td { font-size: 14px; }
-    .amt.plus { font-weight: 700; }
-    .amt.minus { font-weight: 700; }
+    .amt { font-weight: 700; }
     .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; border: 1px solid #ddd; font-size: 12px; background: #fff; }
+    .pill.ok { border-color: #cfe8d5; background: #f3fbf5; }
+    .pill.ng { border-color: #f0caca; background: #fff6f6; }
     .right { text-align: right; }
   </style>
 </head>
 <body>
   <header>
     <h1>節約ログ</h1>
-    <div class="muted">出費は <b>+</b>、節約できたら <b>-</b>（例：+300、-120）</div>
+    <div class="muted">出費は <b>+</b>、節約できたら <b>-</b>（例：+300、-120）／ OK・NGで「いい出費だったか」も記録</div>
   </header>
 
   <main class="grid" style="gap:14px;">
@@ -74,6 +75,14 @@
         <div>
           <label for="note">備考</label>
           <input id="note" placeholder="例：コンビニやめた / 弁当持参" />
+        </div>
+
+        <div>
+          <label for="judge">OK / NG</label>
+          <select id="judge">
+            <option value="OK" selected>OK（良い出費）</option>
+            <option value="NG">NG（微妙な出費）</option>
+          </select>
         </div>
 
         <div class="row">
@@ -104,7 +113,7 @@
         </div>
       </div>
       <div class="muted" style="margin-top:10px;">
-        ※ 合計は「入力金額の合算」。出費（+）は合計が増える／節約（-）は合計が減る。
+        ※ 合計は「入力金額の合算」。OK/NGは評価ラベル（合計計算には影響しない）
       </div>
     </section>
 
@@ -119,10 +128,11 @@
           <thead>
             <tr>
               <th style="width:160px;">日時</th>
+              <th style="width:120px;">OK/NG</th>
               <th style="width:130px;" class="right">金額</th>
               <th style="width:160px;">種別</th>
               <th>備考</th>
-              <th style="width:80px;"></th>
+              <th style="width:150px;"></th>
             </tr>
           </thead>
           <tbody id="tbody"></tbody>
@@ -133,7 +143,7 @@
 
 <script>
 (() => {
-  const KEY = "saving_log_v1";
+  const KEY = "saving_log_v2"; // v1と衝突しないように
   const MAX_SAVE = 1000;
 
   const $ = (id) => document.getElementById(id);
@@ -141,6 +151,7 @@
   const amountEl = $("amount");
   const typeEl = $("type");
   const noteEl = $("note");
+  const judgeEl = $("judge");
   const addBtn = $("addBtn");
   const clearBtn = $("clearBtn");
   const exportBtn = $("exportBtn");
@@ -151,7 +162,7 @@
   const sum10El = $("sum10");
   const tbody = $("tbody");
 
-  /** @type {{id:string, ts:number, amount:number, type:string, note:string}[]} */
+  /** @type {{id:string, ts:number, amount:number, type:string, note:string, judge:"OK"|"NG"}[]} */
   let items = load();
 
   function load() {
@@ -160,7 +171,6 @@
       if (!raw) return [];
       const parsed = JSON.parse(raw);
       if (!Array.isArray(parsed)) return [];
-      // defensive normalize
       return parsed
         .filter(x => x && typeof x === "object")
         .map(x => ({
@@ -168,7 +178,8 @@
           ts: Number(x.ts || Date.now()),
           amount: Number(x.amount || 0),
           type: String(x.type || ""),
-          note: String(x.note || "")
+          note: String(x.note || ""),
+          judge: (x.judge === "NG" ? "NG" : "OK")
         }))
         .slice(0, MAX_SAVE);
     } catch {
@@ -183,21 +194,16 @@
   function parseAmount(s) {
     const t = String(s ?? "").trim();
     if (!t) return null;
-
-    // allow "300", "+300", "-300", "1,200", "-1,200"
     const normalized = t.replace(/,/g, "");
     if (!/^[-+]?(\d+(\.\d+)?)$/.test(normalized)) return null;
-
     const n = Number(normalized);
     if (!Number.isFinite(n)) return null;
     return n;
   }
 
   function yen(n) {
-    // show + and - explicitly
     const sign = n > 0 ? "+" : (n < 0 ? "-" : "");
     const abs = Math.abs(n);
-    // integer-like formatting; keep decimals if user uses them
     const isInt = Number.isInteger(abs);
     const s = isInt ? abs.toLocaleString("ja-JP") : abs.toLocaleString("ja-JP", { maximumFractionDigits: 2 });
     return sign + s;
@@ -217,13 +223,32 @@
 
   function fmtDate(ts) {
     const d = new Date(ts);
-    // yyyy/mm/dd hh:mm
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, "0");
     const day = String(d.getDate()).padStart(2, "0");
     const hh = String(d.getHours()).padStart(2, "0");
     const mm = String(d.getMinutes()).padStart(2, "0");
     return `${y}/${m}/${day} ${hh}:${mm}`;
+  }
+
+  function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, (m) => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+    }[m]));
+  }
+
+  function toggleJudge(id) {
+    const it = items.find(x => x.id === id);
+    if (!it) return;
+    it.judge = (it.judge === "OK" ? "NG" : "OK");
+    save();
+    refresh();
+  }
+
+  function removeItem(id) {
+    items = items.filter(it => it.id !== id);
+    save();
+    refresh();
   }
 
   function renderTable() {
@@ -234,8 +259,15 @@
       const tdDate = document.createElement("td");
       tdDate.textContent = fmtDate(x.ts);
 
+      const tdJudge = document.createElement("td");
+      const judgeBtn = document.createElement("button");
+      judgeBtn.textContent = x.judge;
+      judgeBtn.title = "クリックで OK/NG 切替";
+      judgeBtn.addEventListener("click", () => toggleJudge(x.id));
+      tdJudge.appendChild(judgeBtn);
+
       const tdAmt = document.createElement("td");
-      tdAmt.className = "right amt " + (x.amount < 0 ? "minus" : "plus");
+      tdAmt.className = "right amt";
       tdAmt.textContent = yen(x.amount);
 
       const tdType = document.createElement("td");
@@ -244,26 +276,19 @@
       const tdNote = document.createElement("td");
       tdNote.textContent = x.note || "";
 
-      const tdDel = document.createElement("td");
-      tdDel.className = "right";
-      const btn = document.createElement("button");
-      btn.textContent = "削除";
-      btn.addEventListener("click", () => {
-        items = items.filter(it => it.id !== x.id);
-        save();
-        refresh();
-      });
-      tdDel.appendChild(btn);
+      const tdOps = document.createElement("td");
+      tdOps.className = "right";
+      const pill = document.createElement("span");
+      pill.className = "pill " + (x.judge === "OK" ? "ok" : "ng");
+      pill.textContent = (x.judge === "OK" ? "良い" : "微妙");
+      const delBtn = document.createElement("button");
+      delBtn.textContent = "削除";
+      delBtn.addEventListener("click", () => removeItem(x.id));
+      tdOps.append(pill, document.createTextNode(" "), delBtn);
 
-      tr.append(tdDate, tdAmt, tdType, tdNote, tdDel);
+      tr.append(tdDate, tdJudge, tdAmt, tdType, tdNote, tdOps);
       tbody.appendChild(tr);
     }
-  }
-
-  function escapeHtml(str) {
-    return String(str).replace(/[&<>"']/g, (m) => ({
-      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
-    }[m]));
   }
 
   function refresh() {
@@ -284,29 +309,25 @@
       ts: Date.now(),
       amount: amt,
       type: typeEl.value.trim(),
-      note: noteEl.value.trim()
+      note: noteEl.value.trim(),
+      judge: (judgeEl.value === "NG" ? "NG" : "OK")
     };
 
-    // 最新が上に来るように unshift
     items.unshift(item);
     items = items.slice(0, MAX_SAVE);
 
     save();
     refresh();
 
-    // 次入力しやすく
     amountEl.value = "";
     noteEl.value = "";
+    judgeEl.value = "OK";
     amountEl.focus();
   }
 
   addBtn.addEventListener("click", addItem);
-  amountEl.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") addItem();
-  });
-  noteEl.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") addItem();
-  });
+  amountEl.addEventListener("keydown", (e) => { if (e.key === "Enter") addItem(); });
+  noteEl.addEventListener("keydown", (e) => { if (e.key === "Enter") addItem(); });
 
   clearBtn.addEventListener("click", () => {
     const ok = confirm("全データを削除します。よろしいですか？");
@@ -327,7 +348,6 @@
     URL.revokeObjectURL(url);
   });
 
-  // 初期表示
   refresh();
 })();
 </script>
