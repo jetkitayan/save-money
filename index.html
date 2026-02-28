@@ -84,13 +84,24 @@
       .th-ops { width: 110px !important; }
     }
 
-    /* 合計欄は常に横並び */
+    /* 合計欄（デフォルト） */
     .grid.sums {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
       gap: 10px;
     }
     
+    /* 6個表示：上3つ＋下3つ に固定 */
+    .grid.sums.sums6 {
+      grid-template-columns: repeat(3, 1fr);
+    }
+    
+    /* iPhoneでは少し詰める */
+    @media (max-width: 600px) {
+      .grid.sums { gap: 6px; }
+      .sumBox .v { font-size: 15px; }
+      .sumBox .k { font-size: 11px; }
+    }
+        
     /* iPhoneでは少し詰める */
     @media (max-width: 600px) {
       .grid.sums {
