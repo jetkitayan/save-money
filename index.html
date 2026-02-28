@@ -331,7 +331,7 @@
       
       // （任意）変更した瞬間にも保存したいなら change も
       noteInput.addEventListener("change", commit);
-      
+      noteInput.className = "note-edit";
       tdNote.appendChild(noteInput);
       const tdOps = document.createElement("td");
       tdOps.className = "right";
