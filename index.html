@@ -269,11 +269,15 @@
   const clearBtn = $("clearBtn");
   const exportBtn = $("exportBtn");
 
+  const sumMoney300El = $("sumMoney300");
+  const sumMoney200El = $("sumMoney200");
   const sumMoney100El = $("sumMoney100");
   const sumMoney50El  = $("sumMoney50");
   const sumMoney20El  = $("sumMoney20");
   const sumMoney10El  = $("sumMoney10");
 
+  const sumKcal300El = $("sumKcal300");
+  const sumKcal200El = $("sumKcal200");
   const sumKcal100El = $("sumKcal100");
   const sumKcal50El  = $("sumKcal50");
   const sumKcal20El  = $("sumKcal20");
@@ -360,11 +364,15 @@
   }
 
   function renderSums() {
+    sumMoney300El.textContent = yen(sumLastMoney(300));
+    sumMoney200El.textContent = yen(sumLastMoney(200));
     sumMoney100El.textContent = yen(sumLastMoney(100));
     sumMoney50El.textContent  = yen(sumLastMoney(50));
     sumMoney20El.textContent  = yen(sumLastMoney(20));
     sumMoney10El.textContent  = yen(sumLastMoney(10));
-
+  
+    sumKcal300El.textContent = kcalFmt(sumLastKcal(300));
+    sumKcal200El.textContent = kcalFmt(sumLastKcal(200));
     sumKcal100El.textContent = kcalFmt(sumLastKcal(100));
     sumKcal50El.textContent  = kcalFmt(sumLastKcal(50));
     sumKcal20El.textContent  = kcalFmt(sumLastKcal(20));
