@@ -205,16 +205,6 @@
     localStorage.setItem(KEY, JSON.stringify(items.slice(0, MAX_SAVE)));
   }
 
-  function parseAmount(s) {
-    const t = String(s ?? "").trim();
-    if (!t) return null;
-    const normalized = t.replace(/,/g, "");
-    if (!/^[-+]?(\d+(\.\d+)?)$/.test(normalized)) return null;
-    const n = Number(normalized);
-    if (!Number.isFinite(n)) return null;
-    return n;
-  }
-
   function yen(n) {
     const sign = n > 0 ? "+" : (n < 0 ? "-" : "");
     const abs = Math.abs(n);
@@ -294,13 +284,7 @@
       noteInput.type = "text";
       noteInput.value = x.note || "";
       noteInput.placeholder = "備考（編集可）";
-      
-      // 入力しやすいように少しだけ見た目調整（任意）
-      noteInput.style.width = "100%";
-      noteInput.style.padding = "8px 10px";
-      noteInput.style.borderRadius = "10px";
-      noteInput.style.border = "1px solid #ddd";
-      
+            
       let original = noteInput.value;
       
       // 変更を保存（フォーカスが外れた時 or Enter）
@@ -391,7 +375,7 @@
     amountEl.value = "";
     noteEl.value = "";
     judgeEl.value = "OK";
-    document.getElementById("sign").value = "plus";
+    signEl.value = "plus";
     amountEl.focus();
   }
   
