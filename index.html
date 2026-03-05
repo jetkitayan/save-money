@@ -19,7 +19,7 @@
       flex-direction: column;
       gap: 10px;
     }
-    
+
     /* PCだけ横並び */
     @media (min-width: 720px) {
       .grid.cols {
@@ -47,6 +47,7 @@
       font-size: 14px;
     }
     button:active { transform: translateY(1px); }
+    button[disabled] { opacity: .55; cursor: not-allowed; }
     .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
     .muted { color: #666; font-size: 12px; }
 
@@ -55,7 +56,6 @@
     .sumBox .k { font-size: 12px; color: #666; }
     .sumBox .v { font-size: 18px; font-weight: 700; margin-top: 6px; }
 
-    /* iPhone備考幅対策：固定幅を減らして備考を広くする */
     table { width: 100%; border-collapse: collapse; table-layout: auto; }
     th, td { padding: 10px 8px; border-bottom: 1px solid #eee; text-align: left; vertical-align: top; }
     th { font-size: 12px; color: #666; font-weight: 600; white-space: nowrap; }
@@ -75,7 +75,6 @@
     }
 
     @media (max-width: 600px) {
-      /* スマホで横幅を食う列を少し縮める */
       .th-date { width: 105px !important; }
       .th-judge { width: 72px !important; }
       .th-amt { width: 78px !important; }
@@ -84,77 +83,24 @@
       .th-ops { width: 110px !important; }
     }
 
-    /* 合計欄（デフォルト） */
-    .grid.sums {
-      display: grid;
-      gap: 10px;
-    }
-    
-    /* 6個表示：上3つ＋下3つ に固定 */
-    .grid.sums.sums6 {
-      grid-template-columns: repeat(3, 1fr);
-    }
-    
-    /* iPhoneでは少し詰める */
+    .grid.sums { display: grid; gap: 10px; }
+    .grid.sums.sums6 { grid-template-columns: repeat(3, 1fr); }
+
     @media (max-width: 600px) {
       .grid.sums { gap: 6px; }
       .sumBox .v { font-size: 15px; }
       .sumBox .k { font-size: 11px; }
     }
-        
-    /* iPhoneでは少し詰める */
-    @media (max-width: 600px) {
-      .grid.sums {
-        gap: 6px;
-      }
-    
-      .sumBox .v {
-        font-size: 15px; /* 数字少し小さく */
-      }
-    
-      .sumBox .k {
-        font-size: 11px;
-      }
-    }
-
-    /* 合計4つを横に並べつつ、潰れたら横スクロールできるようにする */
-    @media (max-width: 600px) {
-      .grid.sums {
-        grid-template-columns: repeat(4, minmax(90px, 1fr));
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        padding-bottom: 4px;
-      }
-      .sumBox {
-        min-width: 90px;
-      }
-    }
 
     @media (max-width: 600px) {
-      .grid.sums {
-        grid-template-columns: repeat(2, 1fr);
-      }
+      .grid.sums { grid-template-columns: repeat(2, 1fr); }
     }
 
-    /* 6個（上3つ＋下3つ）用 */
-    .sums6 {
-      grid-template-columns: repeat(3, 1fr);
-    }
+    .sums6 { grid-template-columns: repeat(3, 1fr); }
 
-    /* ===== PCレイアウト調整 ===== */
     @media (min-width: 720px) {
-    
-      /* 備考を2段目へ（横広く） */
-      .grid.cols > div:nth-child(4) {
-        grid-column: 1 / span 4;
-      }
-    
-      /* ボタンを備考の横へ */
-      .grid.cols > div:nth-child(6) {
-        grid-column: 5 / span 2;
-        align-self: end;
-      }
-    
+      .grid.cols > div:nth-child(4) { grid-column: 1 / span 4; }
+      .grid.cols > div:nth-child(6) { grid-column: 5 / span 2; align-self: end; }
     }
   </style>
 </head>
@@ -163,6 +109,7 @@
     <h1>節約ログ</h1>
     <div class="muted">
       金額：出費は <b>+</b>、節約は <b>-</b> ／ カロリー：摂取は <b>+</b>、削減は <b>-</b> ／ OK・NGで評価も記録
+      <span id="netStatus" style="margin-left:10px;"></span>
     </div>
   </header>
 
@@ -201,7 +148,6 @@
           <input id="type"
                  list="typeList"
                  placeholder="例：昼食 / カフェ / 交通 / 買い物 / 運動" />
-          
           <datalist id="typeList"></datalist>
         </div>
 
@@ -221,7 +167,9 @@
         <div class="row">
           <button id="addBtn">追加</button>
           <button id="clearBtn" title="全データ削除">全削除</button>
+          <button id="authBtn" title="認証情報を入れ直す">認証</button>
         </div>
+        <div class="muted" id="hintAuth" style="margin-top:6px;"></div>
       </div>
     </section>
 
@@ -256,7 +204,7 @@
     <!-- 一覧 -->
     <section class="card">
       <div class="row" style="justify-content:space-between;">
-        <div class="muted">最新が上。最大 1000 件まで保存。備考は一覧で編集可。</div>
+        <div class="muted">最新が上。最大 1000 件まで表示。備考は一覧で編集可。</div>
         <button id="exportBtn">JSONエクスポート</button>
       </div>
       <div style="overflow:auto; margin-top:10px;">
@@ -280,8 +228,14 @@
 
 <script>
 (() => {
-  const KEY = "saving_log_v3"; // カロリー追加でバージョン変更
-  const MAX_SAVE = 1000;
+  // ==========================
+  // ここだけ最初に設定
+  // ==========================
+  const API_BASE = "https://memo-save-api.jetkitayan.workers.dev"; // ★あなたのWorker URLに変更
+  const MAX_VIEW = 1000; // UI上の最大表示（DBはもっと入っててもOK）
+
+  // セッションにだけ保存（ブラウザを閉じたら消える）
+  const AUTH_KEY = "savinglog_basic_auth_v1";
 
   const $ = (id) => document.getElementById(id);
 
@@ -295,6 +249,7 @@
   const addBtn = $("addBtn");
   const clearBtn = $("clearBtn");
   const exportBtn = $("exportBtn");
+  const authBtn = $("authBtn");
 
   const sumMoney300El = $("sumMoney300");
   const sumMoney200El = $("sumMoney200");
@@ -311,60 +266,76 @@
   const sumKcal10El  = $("sumKcal10");
 
   const tbody = $("tbody");
+  const netStatusEl = $("netStatus");
+  const hintAuthEl = $("hintAuth");
+
+  /** @type {{id:string, ts:number, amount:number, kcal:number, type:string, note:string, judge:"OK"|"NG"}[]} */
+  let items = [];
+
+  // ==========================
+  // 認証（Basic）
+  // ==========================
+  function getAuthHeader() {
+    const v = sessionStorage.getItem(AUTH_KEY);
+    return v ? ("Basic " + v) : null;
+  }
+
+  function setAuthFromPrompt() {
+    const user = prompt("Basic認証ユーザー名を入力");
+    if (user === null) return false;
+    const pass = prompt("Basic認証パスワードを入力");
+    if (pass === null) return false;
+    const token = btoa(`${user}:${pass}`);
+    sessionStorage.setItem(AUTH_KEY, token);
+    return true;
+  }
+
+  async function api(path, opts = {}) {
+    const auth = getAuthHeader();
+    if (!auth) {
+      const ok = setAuthFromPrompt();
+      if (!ok) throw new Error("auth_cancelled");
+    }
+
+    const headers = Object.assign(
+      { "content-type": "application/json", "Authorization": "Basic " + sessionStorage.getItem(AUTH_KEY) },
+      opts.headers || {}
+    );
+
+    const res = await fetch(API_BASE + path, { ...opts, headers });
+
+    // 401なら認証再入力を促す
+    if (res.status === 401) {
+      sessionStorage.removeItem(AUTH_KEY);
+      throw new Error("unauthorized");
+    }
+
+    const data = await res.json().catch(() => null);
+    if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+    if (data && data.ok === false) throw new Error(data.error || "api_error");
+    return data;
+  }
+
+  function setNetStatus(text) {
+    netStatusEl.textContent = text ? `・${text}` : "";
+  }
 
   function renderTypeList() {
     const dl = document.getElementById("typeList");
     if (!dl) return;
-  
-    // 重複なしで種別を抽出
+
     const types = [...new Set(
       items
         .map(x => (x.type || "").trim())
         .filter(Boolean)
     )];
-  
+
     dl.innerHTML = "";
-  
     for (const t of types) {
       const opt = document.createElement("option");
       opt.value = t;
       dl.appendChild(opt);
     }
-  }
-  
-  function newId() {
-    if (crypto && crypto.randomUUID) return crypto.randomUUID();
-    return String(Date.now()) + "_" + Math.random().toString(16).slice(2);
-  }
-
-  /** @type {{id:string, ts:number, amount:number, kcal:number, type:string, note:string, judge:"OK"|"NG"}[]} */
-  let items = load();
-
-  function load() {
-    try {
-      const raw = localStorage.getItem(KEY);
-      if (!raw) return [];
-      const parsed = JSON.parse(raw);
-      if (!Array.isArray(parsed)) return [];
-      return parsed
-        .filter(x => x && typeof x === "object")
-        .map(x => ({
-          id: String(x.id || newId()),
-          ts: Number(x.ts || Date.now()),
-          amount: Number(x.amount || 0),
-          kcal: Number(x.kcal || 0),
-          type: String(x.type || ""),
-          note: String(x.note || ""),
-          judge: (x.judge === "NG" ? "NG" : "OK")
-        }))
-        .slice(0, MAX_SAVE);
-    } catch {
-      return [];
-    }
-  }
-
-  function save() {
-    localStorage.setItem(KEY, JSON.stringify(items.slice(0, MAX_SAVE)));
   }
 
   function yen(n) {
@@ -397,7 +368,7 @@
     sumMoney50El.textContent  = yen(sumLastMoney(50));
     sumMoney20El.textContent  = yen(sumLastMoney(20));
     sumMoney10El.textContent  = yen(sumLastMoney(10));
-  
+
     sumKcal300El.textContent = kcalFmt(sumLastKcal(300));
     sumKcal200El.textContent = kcalFmt(sumLastKcal(200));
     sumKcal100El.textContent = kcalFmt(sumLastKcal(100));
@@ -413,7 +384,6 @@
     const day = String(d.getDate()).padStart(2, "0");
     const hh = String(d.getHours()).padStart(2, "0");
     const mm = String(d.getMinutes()).padStart(2, "0");
-    // スマホは短縮
     if (window.innerWidth < 600) return `${m}/${day} ${hh}:${mm}`;
     return `${y}/${m}/${day} ${hh}:${mm}`;
   }
@@ -424,18 +394,64 @@
     }[m]));
   }
 
-  function toggleJudge(id) {
-    const it = items.find(x => x.id === id);
-    if (!it) return;
-    it.judge = (it.judge === "OK" ? "NG" : "OK");
-    save();
-    refresh();
+  // ==========================
+  // D1 API（saving_log）
+  // ==========================
+  async function dbList(limit = MAX_VIEW) {
+    const data = await api(`/api/saving_log?limit=${encodeURIComponent(String(limit))}`, { method: "GET" });
+    const list = Array.isArray(data.items) ? data.items : [];
+    // ts DESCで返ってくる前提だが保険でソート
+    list.sort((a,b) => Number(b.ts) - Number(a.ts));
+    items = list.slice(0, MAX_VIEW);
   }
 
-  function removeItem(id) {
-    items = items.filter(it => it.id !== id);
-    save();
+  async function dbCreate(item) {
+    await api("/api/saving_log", { method: "POST", body: JSON.stringify(item) });
+  }
+
+  async function dbPatch(id, patch) {
+    await api(`/api/saving_log/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(patch) });
+  }
+
+  async function dbDelete(id) {
+    await api(`/api/saving_log/${encodeURIComponent(id)}`, { method: "DELETE" });
+  }
+
+  async function dbClearAll() {
+    await api("/api/saving_log", { method: "DELETE" });
+  }
+
+  // ==========================
+  // UI動作
+  // ==========================
+  async function toggleJudge(id) {
+    const it = items.find(x => x.id === id);
+    if (!it) return;
+
+    const next = (it.judge === "OK" ? "NG" : "OK");
+    it.judge = next;
     refresh();
+
+    try {
+      await dbPatch(id, { judge: next });
+    } catch (e) {
+      alert("DB更新に失敗しました（judge）: " + e.message);
+      await reload();
+    }
+  }
+
+  async function removeItem(id) {
+    const old = items;
+    items = items.filter(it => it.id !== id);
+    refresh();
+
+    try {
+      await dbDelete(id);
+    } catch (e) {
+      alert("DB削除に失敗しました: " + e.message);
+      items = old;
+      refresh();
+    }
   }
 
   function renderTable() {
@@ -466,7 +482,6 @@
 
       const tdNote = document.createElement("td");
 
-      // 備考を編集できる input にする
       const noteInput = document.createElement("input");
       noteInput.type = "text";
       noteInput.value = x.note || "";
@@ -475,11 +490,21 @@
 
       let original = noteInput.value;
 
-      const commit = () => {
+      const commit = async () => {
         const it = items.find(it => it.id === x.id);
         if (!it) return;
-        it.note = noteInput.value.trim();
-        save();
+
+        const next = noteInput.value.trim();
+        if (it.note === next) return;
+
+        it.note = next; // 先にUI反映
+        try {
+          await dbPatch(x.id, { note: next });
+        } catch (e) {
+          alert("DB更新に失敗しました（note）: " + e.message);
+          noteInput.value = original;
+          await reload();
+        }
       };
 
       noteInput.addEventListener("keydown", (e) => {
@@ -494,6 +519,7 @@
 
       const tdOps = document.createElement("td");
       tdOps.className = "right";
+
       const pill = document.createElement("span");
       pill.className = "pill " + (x.judge === "OK" ? "ok" : "ng");
       pill.textContent = (x.judge === "OK" ? "良い" : "微妙");
@@ -512,12 +538,12 @@
   function refresh() {
     renderSums();
     renderTable();
-    renderTypeList(); // ←追加
+    renderTypeList();
   }
 
   function parseNumberOnly(s) {
     const t = String(s ?? "").trim();
-    if (!t) return 0; // 未入力は 0 扱い
+    if (!t) return 0;
     const normalized = t.replace(/,/g, "");
     if (!/^(\d+(\.\d+)?)$/.test(normalized)) return null;
     const n = Number(normalized);
@@ -525,9 +551,21 @@
     return n;
   }
 
-  function addItem() {
+  function newId() {
+    if (crypto && crypto.randomUUID) return crypto.randomUUID();
+    return String(Date.now()) + "_" + Math.random().toString(16).slice(2);
+  }
+
+  function lockUI(locked) {
+    addBtn.disabled = locked;
+    clearBtn.disabled = locked;
+    exportBtn.disabled = locked;
+  }
+
+  async function addItem() {
     const moneyN = parseNumberOnly(amountEl.value);
     if (moneyN === null) { alert("金額は数字で入力してください（例：300）"); amountEl.focus(); return; }
+
     const kcalN = parseNumberOnly(kcalEl.value);
     if (kcalN === null) { alert("カロリーは数字で入力してください（例：250）"); kcalEl.focus(); return; }
 
@@ -544,10 +582,25 @@
       judge: (judgeEl.value === "NG" ? "NG" : "OK")
     };
 
+    // UI先行（楽観的）
     items.unshift(item);
-    items = items.slice(0, MAX_SAVE);
-    save();
+    items = items.slice(0, MAX_VIEW);
     refresh();
+
+    lockUI(true);
+    setNetStatus("保存中…");
+    try {
+      await dbCreate(item);
+      setNetStatus("");
+    } catch (e) {
+      setNetStatus("");
+      alert("DB保存に失敗しました: " + e.message);
+      // 失敗時は再同期
+      await reload();
+      lockUI(false);
+      return;
+    }
+    lockUI(false);
 
     amountEl.value = "";
     kcalEl.value = "";
@@ -558,17 +611,53 @@
     amountEl.focus();
   }
 
+  async function reload() {
+    lockUI(true);
+    setNetStatus("読込中…");
+    try {
+      await dbList(MAX_VIEW);
+      refresh();
+      setNetStatus("");
+      hintAuthEl.textContent = "D1保存モード（端末を変えてもデータが残ります）";
+    } catch (e) {
+      setNetStatus("");
+      if (String(e.message || e) === "unauthorized") {
+        hintAuthEl.textContent = "認証が必要です。右の「認証」から入力してください。";
+      } else {
+        hintAuthEl.textContent = "読み込みに失敗しました。API_BASEやWorker側の実装を確認してください。";
+      }
+      console.error(e);
+    } finally {
+      lockUI(false);
+    }
+  }
+
+  // ==========================
+  // イベント
+  // ==========================
   addBtn.addEventListener("click", addItem);
   amountEl.addEventListener("keydown", (e) => { if (e.key === "Enter") addItem(); });
   kcalEl.addEventListener("keydown", (e) => { if (e.key === "Enter") addItem(); });
   noteEl.addEventListener("keydown", (e) => { if (e.key === "Enter") addItem(); });
 
-  clearBtn.addEventListener("click", () => {
-    const ok = confirm("全データを削除します。よろしいですか？");
+  clearBtn.addEventListener("click", async () => {
+    const ok = confirm("全データを削除します。よろしいですか？（DBから消えます）");
     if (!ok) return;
-    items = [];
-    save();
-    refresh();
+
+    lockUI(true);
+    setNetStatus("全削除中…");
+    try {
+      await dbClearAll();
+      items = [];
+      refresh();
+      setNetStatus("");
+    } catch (e) {
+      setNetStatus("");
+      alert("全削除に失敗しました: " + e.message);
+      await reload();
+    } finally {
+      lockUI(false);
+    }
   });
 
   exportBtn.addEventListener("click", () => {
@@ -582,7 +671,15 @@
     URL.revokeObjectURL(url);
   });
 
-  refresh();
+  authBtn.addEventListener("click", async () => {
+    sessionStorage.removeItem(AUTH_KEY);
+    const ok = setAuthFromPrompt();
+    if (!ok) return;
+    await reload();
+  });
+
+  // 初期ロード
+  reload();
 })();
 </script>
 </body>
