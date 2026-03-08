@@ -319,7 +319,7 @@
     }
 
     const headers = Object.assign(
-      { "content-type": "application/json", "Authorization": "Basic " + sessionStorage.getItem(AUTH_KEY) },
+      { "content-type": "application/json", "Authorization": "Basic " + localStorage.getItem(AUTH_KEY) },
       opts.headers || {}
     );
 
