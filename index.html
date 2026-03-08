@@ -369,19 +369,35 @@
   }
 
   function renderSums() {
+  
     sumMoney300El.textContent = yen(sumLastMoney(300));
     sumMoney200El.textContent = yen(sumLastMoney(200));
     sumMoney100El.textContent = yen(sumLastMoney(100));
     sumMoney50El.textContent  = yen(sumLastMoney(50));
     sumMoney20El.textContent  = yen(sumLastMoney(20));
     sumMoney10El.textContent  = yen(sumLastMoney(10));
-
+  
     sumKcal300El.textContent = kcalFmt(sumLastKcal(300));
     sumKcal200El.textContent = kcalFmt(sumLastKcal(200));
     sumKcal100El.textContent = kcalFmt(sumLastKcal(100));
     sumKcal50El.textContent  = kcalFmt(sumLastKcal(50));
     sumKcal20El.textContent  = kcalFmt(sumLastKcal(20));
     sumKcal10El.textContent  = kcalFmt(sumLastKcal(10));
+  
+    // ★追加
+    sumMoney10Label.textContent  = `直近10件（${oldestDate(10)}）`;
+    sumMoney20Label.textContent  = `直近20件（${oldestDate(20)}）`;
+    sumMoney50Label.textContent  = `直近50件（${oldestDate(50)}）`;
+    sumMoney100Label.textContent = `直近100件（${oldestDate(100)}）`;
+    sumMoney200Label.textContent = `直近200件（${oldestDate(200)}）`;
+    sumMoney300Label.textContent = `直近300件（${oldestDate(300)}）`;
+  
+    sumKcal10Label.textContent  = `直近10件（${oldestDate(10)}）`;
+    sumKcal20Label.textContent  = `直近20件（${oldestDate(20)}）`;
+    sumKcal50Label.textContent  = `直近50件（${oldestDate(50)}）`;
+    sumKcal100Label.textContent = `直近100件（${oldestDate(100)}）`;
+    sumKcal200Label.textContent = `直近200件（${oldestDate(200)}）`;
+    sumKcal300Label.textContent = `直近300件（${oldestDate(300)}）`;
   }
 
   function fmtDate(ts) {
@@ -617,21 +633,7 @@
     signKcalEl.value = "plus";
     amountEl.focus();
   }
-  
-  sumMoney10Label.textContent = `直近10件（${oldestDate(10)}）`;
-  sumMoney20Label.textContent = `直近20件（${oldestDate(20)}）`;
-  sumMoney50Label.textContent = `直近50件（${oldestDate(50)}）`;
-  sumMoney100Label.textContent = `直近100件（${oldestDate(100)}）`;
-  sumMoney200Label.textContent = `直近200件（${oldestDate(200)}）`;
-  sumMoney300Label.textContent = `直近300件（${oldestDate(300)}）`;
-  
-  sumKcal10Label.textContent = `直近10件（${oldestDate(10)}）`;
-  sumKcal20Label.textContent = `直近20件（${oldestDate(20)}）`;
-  sumKcal50Label.textContent = `直近50件（${oldestDate(50)}）`;
-  sumKcal100Label.textContent = `直近100件（${oldestDate(100)}）`;
-  sumKcal200Label.textContent = `直近200件（${oldestDate(200)}）`;
-  sumKcal300Label.textContent = `直近300件（${oldestDate(300)}）`;
-    
+      
   async function reload() {
     lockUI(true);
     setNetStatus("読込中…");
