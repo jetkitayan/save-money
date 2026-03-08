@@ -276,7 +276,7 @@
   // 認証（Basic）
   // ==========================
   function getAuthHeader() {
-    const v = sessionStorage.getItem(AUTH_KEY);
+    const v = localStorage.getItem(AUTH_KEY);
     return v ? ("Basic " + v) : null;
   }
 
@@ -286,7 +286,7 @@
     const pass = prompt("Basic認証パスワードを入力");
     if (pass === null) return false;
     const token = btoa(`${user}:${pass}`);
-    sessionStorage.setItem(AUTH_KEY, token);
+    localStorage.setItem(AUTH_KEY, token);
     return true;
   }
 
@@ -306,10 +306,10 @@
 
     // 401なら認証再入力を促す
     if (res.status === 401) {
-      sessionStorage.removeItem(AUTH_KEY);
+      localStorage.removeItem(AUTH_KEY);
       throw new Error("unauthorized");
     }
-
+    
     const data = await res.json().catch(() => null);
     if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
     if (data && data.ok === false) throw new Error(data.error || "api_error");
@@ -672,7 +672,7 @@
   });
 
   authBtn.addEventListener("click", async () => {
-    sessionStorage.removeItem(AUTH_KEY);
+    localStorage.removeItem(AUTH_KEY);
     const ok = setAuthFromPrompt();
     if (!ok) return;
     await reload();
