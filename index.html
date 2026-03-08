@@ -310,7 +310,13 @@
     if (idx < 0) return "";
     return fmtDate(items[idx].ts);
   }
-  
+
+  function rangeLabel(k) {
+    const actual = Math.min(k, items.length);
+    if (actual === 0) return `直近${k}件`;
+    return `直近${actual}件（${oldestDate(k)}）`;
+  }
+    
   async function api(path, opts = {}) {
     const auth = getAuthHeader();
     if (!auth) {
@@ -399,19 +405,19 @@
     sumKcal10El.textContent  = kcalFmt(sumLastKcal(10));
   
     // ★追加
-    sumMoney10Label.textContent  = `直近10件（${oldestDate(10)}）`;
-    sumMoney20Label.textContent  = `直近20件（${oldestDate(20)}）`;
-    sumMoney50Label.textContent  = `直近50件（${oldestDate(50)}）`;
-    sumMoney100Label.textContent = `直近100件（${oldestDate(100)}）`;
-    sumMoney200Label.textContent = `直近200件（${oldestDate(200)}）`;
-    sumMoney300Label.textContent = `直近300件（${oldestDate(300)}）`;
-  
-    sumKcal10Label.textContent  = `直近10件（${oldestDate(10)}）`;
-    sumKcal20Label.textContent  = `直近20件（${oldestDate(20)}）`;
-    sumKcal50Label.textContent  = `直近50件（${oldestDate(50)}）`;
-    sumKcal100Label.textContent = `直近100件（${oldestDate(100)}）`;
-    sumKcal200Label.textContent = `直近200件（${oldestDate(200)}）`;
-    sumKcal300Label.textContent = `直近300件（${oldestDate(300)}）`;
+    sumMoney10Label.textContent  = rangeLabel(10);
+    sumMoney20Label.textContent  = rangeLabel(20);
+    sumMoney50Label.textContent  = rangeLabel(50);
+    sumMoney100Label.textContent = rangeLabel(100);
+    sumMoney200Label.textContent = rangeLabel(200);
+    sumMoney300Label.textContent = rangeLabel(300);
+    
+    sumKcal10Label.textContent  = rangeLabel(10);
+    sumKcal20Label.textContent  = rangeLabel(20);
+    sumKcal50Label.textContent  = rangeLabel(50);
+    sumKcal100Label.textContent = rangeLabel(100);
+    sumKcal200Label.textContent = rangeLabel(200);
+    sumKcal300Label.textContent = rangeLabel(300);
   }
 
   function fmtDate(ts) {
