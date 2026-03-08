@@ -234,7 +234,7 @@
   const API_BASE = "https://memo-save-api.jetkitayan.workers.dev"; // ★あなたのWorker URLに変更
   const MAX_VIEW = 1000; // UI上の最大表示（DBはもっと入っててもOK）
 
-  // セッションにだけ保存（ブラウザを閉じたら消える）
+  // localStorageに保存（ブラウザを閉じても残る）
   const AUTH_KEY = "savinglog_basic_auth_v1";
 
   const $ = (id) => document.getElementById(id);
