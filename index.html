@@ -290,6 +290,13 @@
     return true;
   }
 
+  function oldestDate(k) {
+    if (items.length === 0) return "";
+    const idx = Math.min(k, items.length) - 1;
+    if (idx < 0) return "";
+    return fmtDate(items[idx].ts);
+  }
+  
   async function api(path, opts = {}) {
     const auth = getAuthHeader();
     if (!auth) {
